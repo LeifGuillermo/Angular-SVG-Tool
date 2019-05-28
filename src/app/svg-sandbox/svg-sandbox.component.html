@@ -1,11 +1,48 @@
 <button (click)="drawPaths()">Draw Path</button>
 <button (click)="clear()">Clear</button>
+<button (click)="nodeToggle = !nodeToggle">Toggle Node Placement</button>
 <div
   class="svgSandbox"
   (mousemove)="mouseMoved($event)"
   (click)="sandboxClicked($event)"
 >
   <svg #svgBox style="width:100%;height:100%;" viewBox="0 0 1020 800">
+    <g *ngFor="let row of gridRows">
+      <path [attr.d]="row" stroke="#55555555" stroke-width="1"></path>
+    </g>
+
+    <g *ngFor="let col of gridCols">
+      <path [attr.d]="col" stroke="#55555555" stroke-width="1"></path>
+    </g>
+
+    <svg:rect
+      *ngIf="cRect1 !== null"
+      [attr.x]="cRect1.x"
+      [attr.y]="cRect1.y"
+      [attr.width]="cRectSize.x"
+      [attr.height]="cRectSize.y"
+      rx="30"
+      ry="30"
+      stroke="green"
+      fill="#55555555"
+    ></svg:rect>
+
+    <g *ngIf="nodeSizeArray.length === nodeArray.length">
+      <g *ngFor="let node of nodeArray; index as i">
+        <svg:rect
+          *ngIf="cRect1 !== null"
+          [attr.x]="node.x"
+          [attr.y]="node.y"
+          [attr.width]="nodeSizeArray[i].x"
+          [attr.height]="nodeSizeArray[i].y"
+          rx="30"
+          ry="30"
+          stroke="orange"
+          fill="#55555555"
+        ></svg:rect>
+      </g>
+    </g>
+
     <svg:path
       [attr.d]="lined"
       stroke="red"
@@ -50,7 +87,18 @@
     </g>
   </svg>
 </div>
+<div *ngIf="nodeToggle">
+  Node Placement On
+  <div>p1 = x: {{ cRect1.x }} y: {{ cRect1.y }}</div>
+  <div>size = w: {{ cRectSize.x }} h: {{ cRectSize.y }}</div>
+</div>
+
+<div *ngIf="!nodeToggle">Node Placement Off</div>
 <div>x: {{ coordinateX }}</div>
 <div>y: {{ coordinateY }}</div>
 <div>Line: {{ lineString }}</div>
 <div>Path: {{ pathString }}</div>
+<div>
+  Grid Width: <input type="text" [(value)]="gridWidth" ngModel="gridWidth" />
+</div>
+<div>Grid Height: <input type="text" [(value)]="gridHeight" /></div>

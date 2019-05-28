@@ -1,19 +1,11 @@
-import {
-  Component,
-  OnInit,
-  ViewChild,
-  ComponentFactoryResolver,
-  ApplicationRef,
-  Injector,
-  EmbeddedViewRef
-} from '@angular/core';
+import { Component, OnInit, ViewChild, OnChanges } from '@angular/core';
 
 @Component({
   selector: 'app-svg-sandbox',
   templateUrl: './svg-sandbox.component.html',
   styleUrls: ['./svg-sandbox.component.scss']
 })
-export class SvgSandboxComponent implements OnInit {
+export class SvgSandboxComponent implements OnInit, OnChanges {
   public coordinateX;
   public coordinateY;
 
@@ -22,23 +14,75 @@ export class SvgSandboxComponent implements OnInit {
   public svgEventArray = [];
   public pathString = '';
   public lineString = '';
+  public gridRows = [];
+  public gridCols = [];
+
+  public gridWidth = 50;
+  public gridHeight = 35;
+
+  private numRows = Math.ceil(1020 / this.gridHeight);
+  private numCols = Math.ceil(1020 / this.gridWidth);
 
   public pointArray = [];
+
+  public nodeArray = [];
+  public nodeSizeArray = [];
 
   private maxArraySize = 4;
 
   private xOffset = -10;
   private yOffset = -30;
 
+  public cRect1 = null;
+  public cRectSize = null;
   @ViewChild('svgBox') svg;
 
-  constructor() {}
+  public nodeToggle = false;
+
+  constructor() {
+    this.updateGrid();
+  }
 
   ngOnInit() {}
+
+  ngOnChanges() {
+    this.updateGrid();
+  }
+
+  private updateGrid() {
+    const rows = Array(this.numRows)
+      .map((x, i) => i)
+      .fill(0);
+    const columns = Array(this.numCols)
+      .map((x, i) => i)
+      .fill(0);
+
+    rows.map((row, index) => {
+      this.gridRows.push(
+        ' M 0 ' + index * this.gridHeight + ' L 1200 ' + index * this.gridHeight
+      );
+    });
+
+    columns.map((col, index) => {
+      this.gridCols.push(
+        ' M ' +
+          index * this.gridWidth +
+          ' 0 L ' +
+          index * this.gridWidth +
+          ' 800'
+      );
+    });
+  }
 
   public mouseMoved($event) {
     this.coordinateX = $event.x + this.xOffset;
     this.coordinateY = $event.y + this.yOffset;
+    if (this.nodeToggle && this.cRect1) {
+      this.cRectSize = {
+        x: this.coordinateX - this.cRect1.x,
+        y: this.coordinateY - this.cRect1.y
+      };
+    }
   }
 
   public clear() {
@@ -51,12 +95,31 @@ export class SvgSandboxComponent implements OnInit {
   }
 
   public sandboxClicked($event) {
-    console.log($event);
-    this.svgEventArray.push({
+    const eventPoint = {
       x: $event.x + this.xOffset,
       y: $event.y + this.yOffset
-    });
-    this.pointArray = this.svgEventArray;
+    };
+
+    if (this.nodeToggle) {
+      if (!this.cRect1) {
+        this.cRect1 = eventPoint;
+        this.cRectSize = { x: 0, y: 0 };
+      } else if (this.cRect1 && this.cRectSize) {
+        if (this.nodeArray.length > this.nodeSizeArray.length) {
+          const lastPoint = this.nodeArray[this.nodeArray.length - 1];
+          eventPoint.x = eventPoint.x - lastPoint.x;
+          eventPoint.y = eventPoint.y - lastPoint.y;
+          this.nodeSizeArray.push(eventPoint);
+        } else {
+          this.nodeArray.push(eventPoint);
+        }
+        this.cRect1 = null;
+        this.cRectSize = null;
+      }
+    } else {
+      this.svgEventArray.push(eventPoint);
+      this.pointArray = this.svgEventArray;
+    }
   }
 
   public drawPaths() {
